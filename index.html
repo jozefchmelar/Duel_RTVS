@@ -392,6 +392,77 @@
             padding: 6px;
         }
 
+        .summary-card {
+            text-align: center;
+        }
+
+        .summary-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .summary-score {
+            font-size: clamp(2.5rem, 12vw, 4.5rem);
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: var(--accent);
+            text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.35);
+            margin: 12px 0;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .summary-stat {
+            padding: 16px;
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .summary-stat.correct {
+            border-color: rgba(0, 200, 100, 0.3);
+            background: rgba(0, 200, 100, 0.06);
+        }
+
+        .summary-stat.wrong {
+            border-color: rgba(255, 80, 80, 0.3);
+            background: rgba(255, 80, 80, 0.06);
+        }
+
+        .summary-stat-value {
+            font-size: 2rem;
+            font-weight: 900;
+        }
+
+        .summary-stat.correct .summary-stat-value {
+            color: #00c864;
+        }
+
+        .summary-stat.wrong .summary-stat-value {
+            color: #ff5050;
+        }
+
+        .summary-stat-label {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .summary-total-line {
+            color: var(--muted);
+            font-size: 1rem;
+            margin-top: 8px;
+        }
+
+        .summary-total-line strong {
+            color: var(--accent);
+        }
+
         .action-button {
             min-height: 50px;
             padding: 8px 6px;
@@ -551,23 +622,18 @@
 </head>
 <body data-theme="blue">
     <main class="app-shell">
-        <section class="panel hero">
-            <div class="eyebrow">Offline Duel Scorecard</div>
-            <h1>Duel Companion</h1>
-            <p>Osobn&aacute; bodovacia karta pre jedn&eacute;ho hr&aacute;&#269;a. Vyber si farbu, prep&iacute;naj kol&aacute; a zapisuj si body lok&aacute;lne priamo v mobile.</p>
-        </section>
 
         <section class="panel setup-card" id="setup-screen">
             <h2>Vyber si, za koho hr&aacute;&scaron;</h2>
             <p class="meta-note">T&aacute;to vo&#318;ba nastav&iacute; farbu aplik&aacute;cie, ne&oacute;nov&yacute; glow a texty. Sk&oacute;re aj posledn&eacute; akcie sa ukladaj&uacute; do localStorage.</p>
             <div class="role-grid">
                 <button class="role-button" type="button" data-role="blue">
-                    <strong>Hr&aacute;m ako Modr&yacute;</strong>
-                    <span>Obhajca s tyrkysovo-modr&yacute;m ne&oacute;nom a sveteln&yacute;m panelom.</span>
+                    <strong>Hr&aacute;&#269; &#269;. 1</strong>
+                    <span>V&zcaron;dy stoj&iacute; v&ľavo. Tyrkysovo-modr&yacute; ne&oacute;n.</span>
                 </button>
                 <button class="role-button" type="button" data-role="yellow">
-                    <strong>Hr&aacute;m ako &#381;lt&yacute;</strong>
-                    <span>Vyz&yacute;vate&#318; so zlat&yacute;m ne&oacute;nom a teplej&scaron;&iacute;m kontrastom.</span>
+                    <strong>Hr&aacute;&#269; &#269;. 2</strong>
+                    <span>V&zcaron;dy stoj&iacute; vpravo. Zlat&yacute; ne&oacute;n.</span>
                 </button>
             </div>
         </section>
@@ -577,7 +643,7 @@
                 <div class="status-bar">
                     <div class="player-badge">
                         <span class="player-dot"></span>
-                        <strong id="player-name">Modr&yacute; hr&aacute;&#269;</strong>
+                        <strong id="player-name">Hr&aacute;&#269; &#269;. 1</strong>
                     </div>
                     <div class="mini-actions">
                         <button class="undo-button" type="button" id="undo-step" disabled>&#8617; Sp&auml;&#357;</button>
@@ -666,6 +732,25 @@
             <p class="meta-note">Pomocn&aacute; kontrola pre pr&iacute;pad, &zcaron;e sa pom&yacute;li&scaron; pri zapisovan&iacute; bodov.</p>
             <ul class="history-list" id="history-list"></ul>
         </section>
+
+        <section class="panel summary-card hidden" id="summary-screen">
+            <h2>&#127942; Koniec hry</h2>
+            <div class="summary-score" id="summary-total"></div>
+            <div class="summary-grid">
+                <div class="summary-stat correct">
+                    <div class="summary-stat-value" id="summary-correct">0</div>
+                    <div class="summary-stat-label">Spr&aacute;vne</div>
+                </div>
+                <div class="summary-stat wrong">
+                    <div class="summary-stat-value" id="summary-wrong">0</div>
+                    <div class="summary-stat-label">Nespr&aacute;vne</div>
+                </div>
+            </div>
+            <div class="summary-total-line">
+                Celkov&aacute; nahran&aacute; suma: <strong id="summary-earned"></strong>
+            </div>
+            <button class="action-button positive" type="button" id="summary-new-game" style="margin-top:16px;min-height:52px;width:100%">Nov&aacute; hra</button>
+        </section>
     </main>
 
     <script>
@@ -675,7 +760,8 @@
             score: 0,
             round: 1,
             questionIndex: 0,
-            history: []
+            history: [],
+            finished: false
         };
 
         const roundMeta = {
@@ -687,6 +773,7 @@
         const setupScreen = document.getElementById("setup-screen");
         const gameScreen = document.getElementById("game-screen");
         const historyScreen = document.getElementById("history-screen");
+        const summaryScreen = document.getElementById("summary-screen");
         const scoreDisplay = document.getElementById("score-display");
         const playerName = document.getElementById("player-name");
         const controlsTitle = document.getElementById("controls-title");
@@ -719,7 +806,8 @@
                     score: Number.isFinite(parsed.score) ? parsed.score : 0,
                     round: [1, 2, 3].includes(parsed.round) ? parsed.round : 1,
                     questionIndex: Number.isFinite(parsed.questionIndex) ? parsed.questionIndex : 0,
-                    history: Array.isArray(parsed.history) ? parsed.history.slice(0, 30) : []
+                    history: Array.isArray(parsed.history) ? parsed.history.slice(0, 50) : [],
+                    finished: Boolean(parsed.finished)
                 };
             } catch (error) {
                 return { ...defaultState };
@@ -745,7 +833,7 @@
         function setRole(role) {
             state.role = role;
             document.body.dataset.theme = role;
-            playerName.textContent = role === "yellow" ? "Žltý hráč" : "Modrý hráč";
+            playerName.textContent = role === "yellow" ? "Hráč č. 2" : "Hráč č. 1";
             saveState();
             render();
         }
@@ -777,9 +865,13 @@
             addHistory(kind, delta);
 
             const meta = roundMeta[state.round];
-            if (meta.limit && state.questionIndex >= meta.limit && state.round < 3) {
-                state.round++;
-                state.questionIndex = 0;
+            if (meta.limit && state.questionIndex >= meta.limit) {
+                if (state.round < 3) {
+                    state.round++;
+                    state.questionIndex = 0;
+                } else {
+                    state.finished = true;
+                }
             }
 
             saveState();
@@ -869,19 +961,48 @@
 
         function render() {
             const hasRole = Boolean(state.role);
+            const isFinished = Boolean(state.finished);
+
             setupScreen.classList.toggle("hidden", hasRole);
-            gameScreen.classList.toggle("hidden", !hasRole);
-            historyScreen.classList.toggle("hidden", !hasRole);
+            gameScreen.classList.toggle("hidden", !hasRole || isFinished);
+            historyScreen.classList.toggle("hidden", !hasRole || isFinished);
+            summaryScreen.classList.toggle("hidden", !hasRole || !isFinished);
 
             if (!hasRole) {
                 return;
             }
 
             document.body.dataset.theme = state.role;
-            playerName.textContent = state.role === "yellow" ? "Žltý hráč" : "Modrý hráč";
+            playerName.textContent = state.role === "yellow" ? "Hráč č. 2" : "Hráč č. 1";
             scoreDisplay.textContent = formatCurrency(state.score);
+
+            if (isFinished) {
+                renderSummary();
+                return;
+            }
+
             renderRound();
             renderHistory();
+        }
+
+        function renderSummary() {
+            let correct = 0;
+            let wrong = 0;
+            let earned = 0;
+
+            state.history.forEach(entry => {
+                if (entry.delta > 0) {
+                    correct++;
+                    earned += entry.delta;
+                } else if (entry.delta < 0) {
+                    wrong++;
+                }
+            });
+
+            document.getElementById("summary-total").textContent = formatCurrency(state.score);
+            document.getElementById("summary-correct").textContent = correct;
+            document.getElementById("summary-wrong").textContent = wrong;
+            document.getElementById("summary-earned").textContent = formatCurrency(earned);
         }
 
         document.querySelectorAll("[data-role]").forEach((button) => {
@@ -972,6 +1093,17 @@
             state.round = 1;
             state.questionIndex = 0;
             state.history = [];
+            state.finished = false;
+            saveState();
+            render();
+        });
+
+        document.getElementById("summary-new-game").addEventListener("click", () => {
+            state.score = 0;
+            state.round = 1;
+            state.questionIndex = 0;
+            state.history = [];
+            state.finished = false;
             saveState();
             render();
         });
@@ -984,5 +1116,6 @@
 
         render();
     </script>
+    <footer style="text-align:center;padding:24px 0 12px;color:#8ea4c9;font-size:0.75rem;opacity:0.6">vibe coded by <a href="https://jozefchmelar.com" style="color:inherit;text-decoration:underline" target="_blank" rel="noopener">jozefchmelar.com</a></footer>
 </body>
 </html>

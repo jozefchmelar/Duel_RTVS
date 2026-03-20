@@ -1,42 +1,37 @@
 # Duel Companion
 
-Jednoduchá mobilná webová aplikácia na zapisovanie skóre pri sledovaní relácie Duel.
+Osobná bodovacia karta pre reláciu Duel na RTVS. Jeden HTML súbor, žiadny server.
 
-## O čom je táto appka
+## Ako to funguje
 
-Táto appka funguje ako osobná bodovacia karta pre jedného hráča.
-Každý si na svojom mobile zapisuje vlastné skóre podľa toho, čo vidí v televízii.
+1. Vyber si hráča — **Hráč č. 1** (vľavo, tyrkysový neón) alebo **Hráč č. 2** (vpravo, zlatý neón)
+2. Zapisuj si skóre počas sledovania relácie
+3. Po skončení hry uvidíš súhrn s počtom správnych/nesprávnych odpovedí a celkovou sumou
 
-Nepotrebuje žiadny server, databázu ani prihlasovanie.
-Celá aplikácia je len jeden statický HTML súbor, takže je vhodná aj na nasadenie cez GitHub Pages.
+## Kolá
 
-## Hlavné funkcie
+| Kolo | Otázok | Mechanika |
+|------|--------|-----------|
+| 1. kolo | 10 | **Viem** (+30 €) alebo **Neviem** (0 €) |
+| 2. kolo | 10 | Najprv stav sumu (20–100 €), potom označ správne/nesprávne |
+| 3. kolo | 5 | Najprv stav sumu (20–350 €), potom označ správne/nesprávne |
 
-- výber identity hráča: Modrý alebo Žltý
-- neónový vzhľad vo farbe zvoleného hráča
-- jedno veľké skóre pre osobné sledovanie bodov
-- prepínanie medzi kolami hry
-- 1. kolo s 10 otázkami po `30 €`, teda tlačidlá `+30` a `-30`
-- 2. kolo s 20 otázkami a hodnotami `20 €`, `40 €`, `60 €`, `80 €` a `100 €`
-- 3. kolo s hodnotami `150 €`, `200 €`, `250 €`, `300 €` a `350 €`
-- 4. kolo Finále s rovnakým princípom vlastnej stávky
-- história posledných akcií pre rýchlu kontrolu
-- ukladanie stavu do LocalStorage, takže skóre ostane zachované aj po obnovení stránky
+## Funkcie
 
-## Technológie
-
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- LocalStorage
+- neónový dizajn vo farbe zvoleného hráča
+- dvojkrokové stávky v 2. a 3. kole (vyber sumu → správne/nesprávne)
+- automatický prechod medzi kolami
+- progress bar s počítadlom otázok
+- tlačidlo Späť na opravu chýb
+- súhrn na konci hry (správne, nesprávne, celková nahraná suma)
+- ukladanie stavu do localStorage
+- blokácia double-tap zoom na iPhone
+- offline, žiadne prihlasovanie, žiadna databáza
 
 ## Spustenie
 
-Stačí otvoriť súbor `index.html` v prehliadači.
+Otvor `index.html` v prehliadači alebo nasaď cez GitHub Pages.
 
-Pre nasadenie na GitHub Pages stačí tento repozitár publikovať ako statický web bez ďalších úprav.
+---
 
-## Poznámka
-
-Aplikácia je offline a nezdieľa dáta medzi zariadeniami.
-Je navrhnutá zámerne jednoducho, aby bola rýchla, súkromná a bez nastavovania.# Duel_RTVS
+*vibe coded by [jozefchmelar.com](https://jozefchmelar.com)*
