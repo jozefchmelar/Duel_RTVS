@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000510">
+    <title>Duel Companion</title>
+    <style>
+        :root {
+            --text: #eef7ff;
+            --muted: #8ea4c9;
+            --shadow: 0 18px 46px rgba(0, 0, 0, 0.5);
+            --radius-xl: 28px;
+            --radius-lg: 22px;
+            --radius-md: 16px;
+            --transition: 180ms ease;
+            --accent: #00ccff;
+            --accent-rgb: 0, 204, 255;
+            --accent-contrast: #03131e;
+        }
+
+        body[data-theme="yellow"] {
+            --accent: #ffd700;
+            --accent-rgb: 255, 215, 0;
+            --accent-contrast: #231b00;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top center, rgba(var(--accent-rgb), 0.18), transparent 26%),
+                radial-gradient(circle at 50% 30%, rgba(30, 52, 108, 0.32), transparent 42%),
+                linear-gradient(180deg, #020814 0%, #000510 100%);
+            padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)) 16px;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            appearance: none;
+            border: 0;
+            cursor: pointer;
+            transition: transform var(--transition), box-shadow var(--transition), background var(--transition), opacity var(--transition);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px) scale(0.985);
+        }
+
+        button:focus-visible,
+        input:focus-visible {
+            outline: 3px solid rgba(var(--accent-rgb), 0.45);
+            outline-offset: 2px;
+        }
+
+        .app-shell {
+            max-width: 760px;
+            margin: 0 auto;
+            display: grid;
+            gap: 10px;
+        }
+
+        .panel {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-xl);
+            background: linear-gradient(180deg, rgba(7, 18, 40, 0.92), rgba(4, 11, 24, 0.96));
+            border: 1px solid rgba(var(--accent-rgb), 0.18);
+            box-shadow: var(--shadow), 0 0 30px rgba(var(--accent-rgb), 0.08);
+            backdrop-filter: blur(14px);
+        }
+
+        .panel::after {
+            content: "";
+            position: absolute;
+            inset: auto -60px -60px auto;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(var(--accent-rgb), 0.22), transparent 66%);
+            pointer-events: none;
+        }
+
+        .hero,
+        .setup-card,
+        .game-card,
+        .history-card {
+            padding: 14px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #d6e9ff;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+
+        .hero {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero h1 {
+            font-size: 1.1rem;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            text-shadow: 0 0 14px rgba(var(--accent-rgb), 0.2);
+        }
+
+        .hero p {
+            display: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .meta-note,
+        .control-heading p {
+            margin-top: 6px;
+            color: var(--muted);
+            line-height: 1.4;
+            font-size: 0.88rem;
+        }
+
+        .role-grid,
+        .rounds,
+        .button-grid,
+        .wager-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .role-grid {
+            grid-template-columns: 1fr 1fr;
+            margin-top: 18px;
+        }
+
+        .role-button {
+            min-height: 130px;
+            padding: 18px;
+            border-radius: var(--radius-lg);
+            text-align: left;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .role-button strong {
+            display: block;
+            font-size: 1.15rem;
+            margin-bottom: 6px;
+        }
+
+        .role-button span {
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .role-button[data-role="blue"] {
+            box-shadow: inset 0 0 0 1px rgba(0, 204, 255, 0.18), 0 0 20px rgba(0, 204, 255, 0.08);
+        }
+
+        .role-button[data-role="yellow"] {
+            box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.18), 0 0 20px rgba(255, 215, 0, 0.08);
+        }
+
+        .game-top {
+            display: grid;
+            gap: 10px;
+        }
+
+        .status-bar,
+        .mini-actions,
+        .player-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status-bar {
+            justify-content: space-between;
+        }
+
+        .player-badge {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(var(--accent-rgb), 0.12);
+            border: 1px solid rgba(var(--accent-rgb), 0.24);
+            box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.16);
+        }
+
+        .player-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.8);
+        }
+
+        .ghost-button,
+        .reset-button,
+        .round-tab,
+        .action-button {
+            border-radius: 16px;
+        }
+
+        .ghost-button,
+        .reset-button {
+            min-height: 44px;
+            padding: 0 14px;
+            border-radius: 999px;
+        }
+
+        .ghost-button {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .reset-button,
+        .action-button.positive {
+            background: linear-gradient(180deg, rgba(var(--accent-rgb), 1), rgba(var(--accent-rgb), 0.75));
+            color: var(--accent-contrast);
+            box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.24);
+            font-weight: 800;
+        }
+
+        .score-card {
+            padding: 14px 18px;
+            border-radius: var(--radius-xl);
+            background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.2), rgba(7, 18, 40, 0.5));
+            border: 1px solid rgba(var(--accent-rgb), 0.28);
+            box-shadow: inset 0 0 30px rgba(var(--accent-rgb), 0.08), 0 0 30px rgba(var(--accent-rgb), 0.12);
+        }
+
+        .score-label {
+            color: rgba(255, 255, 255, 0.76);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.85rem;
+        }
+
+        .score-value {
+            margin-top: 4px;
+            font-size: clamp(3rem, 15vw, 5.5rem);
+            line-height: 0.9;
+            letter-spacing: -0.07em;
+            text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.35), 0 0 42px rgba(var(--accent-rgb), 0.15);
+        }
+
+        .rounds {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .round-tab {
+            min-height: 52px;
+            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: left;
+        }
+
+        .round-tab.active {
+            background: rgba(var(--accent-rgb), 0.16);
+            border-color: rgba(var(--accent-rgb), 0.3);
+            box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.16);
+        }
+
+        .round-tab strong {
+            display: block;
+            margin-bottom: 2px;
+            font-size: 0.92rem;
+        }
+
+        .round-tab span {
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        .control-panel {
+            margin-top: 10px;
+            padding: 14px;
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(var(--accent-rgb), 0.14);
+            box-shadow: inset 0 0 22px rgba(var(--accent-rgb), 0.05);
+        }
+
+        .button-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .stake-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .stake-button {
+            min-height: 50px;
+            padding: 8px 6px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            background: rgba(var(--accent-rgb), 0.10);
+            color: var(--text);
+            border: 1px solid rgba(var(--accent-rgb), 0.2);
+            border-radius: var(--radius-lg);
+        }
+
+        .stake-button.selected {
+            background: rgba(var(--accent-rgb), 0.25);
+            border-color: var(--accent);
+            box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.3);
+        }
+
+        .confirm-panel {
+            margin-top: 12px;
+            padding: 14px;
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(var(--accent-rgb), 0.2);
+            text-align: center;
+        }
+
+        .confirm-label {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--muted);
+        }
+
+        .confirm-label strong {
+            color: var(--accent);
+            font-size: 1.3rem;
+        }
+
+        .confirm-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .confirm-actions .action-button {
+            min-height: 56px;
+            font-size: 1rem;
+        }
+
+        .cancel-stake-btn {
+            margin-top: 10px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 6px;
+        }
+
+        .action-button {
+            min-height: 50px;
+            padding: 8px 6px;
+            font-weight: 800;
+            font-size: 0.95rem;
+        }
+
+        .action-button.negative {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .wager-box {
+            display: grid;
+            gap: 12px;
+        }
+
+        .wager-input {
+            width: 100%;
+            min-height: 58px;
+            padding: 0 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(var(--accent-rgb), 0.2);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            box-shadow: inset 0 0 22px rgba(var(--accent-rgb), 0.05);
+        }
+
+        .wager-actions {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .history-list {
+            list-style: none;
+            margin: 14px 0 0;
+            padding: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        .history-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .history-kind,
+        .history-empty {
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .q-progress-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .q-progress-bar .q-text {
+            white-space: nowrap;
+            font-size: 0.85rem;
+            color: var(--muted);
+            min-width: max-content;
+        }
+
+        .q-track {
+            flex: 1;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .q-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+            transition: width 250ms ease;
+        }
+
+        .undo-button {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 44px;
+            padding: 0 14px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        .undo-button:disabled {
+            opacity: 0.3;
+            cursor: default;
+            transform: none;
+        }
+
+        @media (max-width: 640px) {
+            .role-grid,
+            .rounds,
+            .button-grid,
+            .stake-grid,
+            .wager-actions {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .button-grid .action-button:last-child:nth-child(odd) {
+                grid-column: span 2;
+            }
+
+            .stake-grid .stake-button:last-child:nth-child(odd) {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-shell {
+                gap: 12px;
+            }
+
+            .panel,
+            .score-card {
+                border-radius: 22px;
+            }
+
+            .role-grid,
+            .rounds,
+            .wager-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .button-grid,
+            .stake-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .mini-actions {
+                width: 100%;
+            }
+
+            .ghost-button,
+            .reset-button {
+                flex: 1 1 0;
+            }
+        }
+    </style>
+</head>
+<body data-theme="blue">
+    <main class="app-shell">
+        <section class="panel hero">
+            <div class="eyebrow">Offline Duel Scorecard</div>
+            <h1>Duel Companion</h1>
+            <p>Osobn&aacute; bodovacia karta pre jedn&eacute;ho hr&aacute;&#269;a. Vyber si farbu, prep&iacute;naj kol&aacute; a zapisuj si body lok&aacute;lne priamo v mobile.</p>
+        </section>
+
+        <section class="panel setup-card" id="setup-screen">
+            <h2>Vyber si, za koho hr&aacute;&scaron;</h2>
+            <p class="meta-note">T&aacute;to vo&#318;ba nastav&iacute; farbu aplik&aacute;cie, ne&oacute;nov&yacute; glow a texty. Sk&oacute;re aj posledn&eacute; akcie sa ukladaj&uacute; do localStorage.</p>
+            <div class="role-grid">
+                <button class="role-button" type="button" data-role="blue">
+                    <strong>Hr&aacute;m ako Modr&yacute;</strong>
+                    <span>Obhajca s tyrkysovo-modr&yacute;m ne&oacute;nom a sveteln&yacute;m panelom.</span>
+                </button>
+                <button class="role-button" type="button" data-role="yellow">
+                    <strong>Hr&aacute;m ako &#381;lt&yacute;</strong>
+                    <span>Vyz&yacute;vate&#318; so zlat&yacute;m ne&oacute;nom a teplej&scaron;&iacute;m kontrastom.</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="panel game-card hidden" id="game-screen">
+            <div class="game-top">
+                <div class="status-bar">
+                    <div class="player-badge">
+                        <span class="player-dot"></span>
+                        <strong id="player-name">Modr&yacute; hr&aacute;&#269;</strong>
+                    </div>
+                    <div class="mini-actions">
+                        <button class="undo-button" type="button" id="undo-step" disabled>&#8617; Sp&auml;&#357;</button>
+                        <button class="ghost-button" type="button" id="change-role">Zmeni&#357; farbu</button>
+                        <button class="reset-button" type="button" id="reset-score">Reset sk&oacute;re</button>
+                    </div>
+                </div>
+
+                <div class="q-progress-bar" id="q-progress">
+                    <span class="q-text" id="q-text">Ot&aacute;zka 0 / 10</span>
+                    <div class="q-track"><div class="q-fill" id="q-fill" style="width:0%"></div></div>
+                </div>
+
+                <div class="score-card">
+                    <div class="score-label">Moje aktu&aacute;lne sk&oacute;re</div>
+                    <div class="score-value" id="score-display">0 &euro;</div>
+                </div>
+
+                <div class="rounds">
+                    <button class="round-tab active" type="button" data-round="1"><strong>1. kolo</strong><span>&plusmn;30</span></button>
+                    <button class="round-tab" type="button" data-round="2"><strong>2. kolo</strong><span>&plusmn;20 a&#382; 100</span></button>
+                    <button class="round-tab" type="button" data-round="3"><strong>3. kolo</strong><span>&plusmn;20 a&#382; 350</span></button>
+                </div>
+            </div>
+
+            <section class="control-panel">
+                <div class="control-heading">
+                    <h3 id="controls-title">1. kolo</h3>
+                    <p id="controls-description">V prvom kole je 10 ot&aacute;zok po 30 eur.</p>
+                </div>
+
+                <div id="round-1-controls">
+                    <div class="button-grid">
+                        <button class="action-button" type="button" data-delta="0">0</button>
+                        <button class="action-button positive" type="button" data-delta="30">+30</button>
+                    </div>
+                </div>
+
+                <div id="round-2-controls" class="hidden">
+                    <div class="stake-grid">
+                        <button class="stake-button" type="button" data-stake="20">20 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="40">40 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="60">60 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="80">80 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="100">100 &euro;</button>
+                    </div>
+                    <div class="confirm-panel hidden" id="confirm-2">
+                        <div class="confirm-label">St&aacute;vka: <strong id="confirm-2-amount"></strong></div>
+                        <div class="confirm-actions">
+                            <button class="action-button negative confirm-btn" type="button" data-result="wrong">&times; Nespr&aacute;vne</button>
+                            <button class="action-button positive confirm-btn" type="button" data-result="correct">&check; Spr&aacute;vne</button>
+                        </div>
+                        <button class="cancel-stake-btn" type="button">Zru&scaron;i&tcaron; st&aacute;vku</button>
+                    </div>
+                </div>
+
+                <div id="round-3-controls" class="hidden">
+                    <div class="stake-grid">
+                        <button class="stake-button" type="button" data-stake="20">20 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="40">40 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="60">60 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="80">80 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="100">100 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="150">150 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="200">200 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="250">250 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="300">300 &euro;</button>
+                        <button class="stake-button" type="button" data-stake="350">350 &euro;</button>
+                    </div>
+                    <div class="confirm-panel hidden" id="confirm-3">
+                        <div class="confirm-label">St&aacute;vka: <strong id="confirm-3-amount"></strong></div>
+                        <div class="confirm-actions">
+                            <button class="action-button negative confirm-btn" type="button" data-result="wrong">&times; Nespr&aacute;vne</button>
+                            <button class="action-button positive confirm-btn" type="button" data-result="correct">&check; Spr&aacute;vne</button>
+                        </div>
+                        <button class="cancel-stake-btn" type="button">Zru&scaron;i&tcaron; st&aacute;vku</button>
+                    </div>
+                </div>
+
+
+            </section>
+        </section>
+
+        <section class="panel history-card hidden" id="history-screen">
+            <h3>Posledn&eacute; akcie</h3>
+            <p class="meta-note">Pomocn&aacute; kontrola pre pr&iacute;pad, &zcaron;e sa pom&yacute;li&scaron; pri zapisovan&iacute; bodov.</p>
+            <ul class="history-list" id="history-list"></ul>
+        </section>
+    </main>
+
+    <script>
+        const STORAGE_KEY = "duel-companion-solo-state";
+        const defaultState = {
+            role: null,
+            score: 0,
+            round: 1,
+            questionIndex: 0,
+            history: []
+        };
+
+        const roundMeta = {
+            1: { title: "1. kolo", description: "V prvom kole je 10 otázok po 30 eur.", limit: 10 },
+            2: { title: "2. kolo", description: "Najprv stav sumu, potom označ správne/nesprávne. 10 otázok.", limit: 10 },
+            3: { title: "3. kolo", description: "Najprv stav sumu, potom označ správne/nesprávne. 5 otázok.", limit: 5 }
+        };
+
+        const setupScreen = document.getElementById("setup-screen");
+        const gameScreen = document.getElementById("game-screen");
+        const historyScreen = document.getElementById("history-screen");
+        const scoreDisplay = document.getElementById("score-display");
+        const playerName = document.getElementById("player-name");
+        const controlsTitle = document.getElementById("controls-title");
+        const controlsDescription = document.getElementById("controls-description");
+        const historyList = document.getElementById("history-list");
+        const qText = document.getElementById("q-text");
+        const qFill = document.getElementById("q-fill");
+        const qProgress = document.getElementById("q-progress");
+        const undoButton = document.getElementById("undo-step");
+        const roundTabs = Array.from(document.querySelectorAll(".round-tab"));
+        const controlSections = {
+            1: document.getElementById("round-1-controls"),
+            2: document.getElementById("round-2-controls"),
+            3: document.getElementById("round-3-controls")
+        };
+
+        const state = loadState();
+        let pendingStake = { round: null, amount: 0 };
+
+        function loadState() {
+            try {
+                const raw = window.localStorage.getItem(STORAGE_KEY);
+                if (!raw) {
+                    return { ...defaultState };
+                }
+
+                const parsed = JSON.parse(raw);
+                return {
+                    role: parsed.role === "yellow" ? "yellow" : parsed.role === "blue" ? "blue" : null,
+                    score: Number.isFinite(parsed.score) ? parsed.score : 0,
+                    round: [1, 2, 3].includes(parsed.round) ? parsed.round : 1,
+                    questionIndex: Number.isFinite(parsed.questionIndex) ? parsed.questionIndex : 0,
+                    history: Array.isArray(parsed.history) ? parsed.history.slice(0, 30) : []
+                };
+            } catch (error) {
+                return { ...defaultState };
+            }
+        }
+
+        function saveState() {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat("sk-SK", {
+                style: "currency",
+                currency: "EUR",
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function formatDelta(value) {
+            return `${value >= 0 ? "+" : "-"}${Math.abs(value)} €`;
+        }
+
+        function setRole(role) {
+            state.role = role;
+            document.body.dataset.theme = role;
+            playerName.textContent = role === "yellow" ? "Žltý hráč" : "Modrý hráč";
+            saveState();
+            render();
+        }
+
+        function setRound(round) {
+            state.round = round;
+            saveState();
+            render();
+        }
+
+        function addHistory(kind, delta) {
+            state.history.unshift({
+                label: formatDelta(delta),
+                total: formatCurrency(state.score),
+                kind,
+                delta,
+                prevScore: state.score - delta,
+                prevRound: state.history.length > 0 ? state.history[0]._round : state.round,
+                prevQI: state.history.length > 0 ? state.history[0]._qi : 0,
+                _round: state.round,
+                _qi: state.questionIndex
+            });
+            state.history = state.history.slice(0, 30);
+        }
+
+        function applyDelta(delta, kind) {
+            state.score += delta;
+            state.questionIndex++;
+            addHistory(kind, delta);
+
+            const meta = roundMeta[state.round];
+            if (meta.limit && state.questionIndex >= meta.limit && state.round < 3) {
+                state.round++;
+                state.questionIndex = 0;
+            }
+
+            saveState();
+            render();
+        }
+
+        function undoLastStep() {
+            if (state.history.length === 0) return;
+            const last = state.history.shift();
+            state.score = last.prevScore;
+            state.round = last._round;
+            state.questionIndex = Math.max(0, last._qi - 1);
+            saveState();
+            render();
+        }
+
+        function readWager(round) {
+            const input = document.getElementById(`wager-input-${round}`);
+            const amount = Number(input.value);
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                input.focus();
+                return null;
+            }
+
+            return { amount, input };
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = "";
+
+            if (state.history.length === 0) {
+                const item = document.createElement("li");
+                item.className = "history-empty";
+                item.textContent = "Zatiaľ bez záznamu.";
+                historyList.appendChild(item);
+                return;
+            }
+
+            state.history.forEach((entry) => {
+                const item = document.createElement("li");
+                const left = document.createElement("div");
+                const right = document.createElement("div");
+                const kind = document.createElement("div");
+                const wrapper = document.createElement("div");
+
+                left.textContent = entry.label;
+                right.textContent = entry.total;
+                kind.className = "history-kind";
+                kind.textContent = entry.kind;
+
+                wrapper.append(left, kind);
+                item.append(wrapper, right);
+                historyList.appendChild(item);
+            });
+        }
+
+        function renderRound() {
+            const meta = roundMeta[state.round];
+            controlsTitle.textContent = meta.title;
+            controlsDescription.textContent = meta.description;
+
+            roundTabs.forEach((tab) => {
+                tab.classList.toggle("active", Number(tab.dataset.round) === state.round);
+            });
+
+            Object.entries(controlSections).forEach(([round, section]) => {
+                section.classList.toggle("hidden", Number(round) !== state.round);
+            });
+
+            // Reset any open confirm panels
+            document.querySelectorAll(".confirm-panel").forEach(p => p.classList.add("hidden"));
+            document.querySelectorAll(".stake-grid").forEach(g => g.classList.remove("hidden"));
+            document.querySelectorAll(".stake-button").forEach(b => b.classList.remove("selected"));
+            pendingStake = { round: null, amount: 0 };
+
+            if (meta.limit) {
+                qProgress.classList.remove("hidden");
+                qText.textContent = `Otázka ${state.questionIndex} / ${meta.limit}`;
+                qFill.style.width = `${(state.questionIndex / meta.limit) * 100}%`;
+            } else {
+                qProgress.classList.add("hidden");
+            }
+
+            undoButton.disabled = state.history.length === 0;
+        }
+
+        function render() {
+            const hasRole = Boolean(state.role);
+            setupScreen.classList.toggle("hidden", hasRole);
+            gameScreen.classList.toggle("hidden", !hasRole);
+            historyScreen.classList.toggle("hidden", !hasRole);
+
+            if (!hasRole) {
+                return;
+            }
+
+            document.body.dataset.theme = state.role;
+            playerName.textContent = state.role === "yellow" ? "Žltý hráč" : "Modrý hráč";
+            scoreDisplay.textContent = formatCurrency(state.score);
+            renderRound();
+            renderHistory();
+        }
+
+        document.querySelectorAll("[data-role]").forEach((button) => {
+            button.addEventListener("click", () => setRole(button.dataset.role));
+        });
+
+        roundTabs.forEach((button) => {
+            button.addEventListener("click", () => setRound(Number(button.dataset.round)));
+        });
+
+        document.querySelectorAll("[data-delta]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const delta = Number(button.dataset.delta);
+                const label = roundMeta[state.round].title;
+                applyDelta(delta, label);
+            });
+        });
+
+        /* ---- Stake-based flow for rounds 2 & 3 ---- */
+
+        function showConfirm(round, amount) {
+            pendingStake = { round, amount };
+            const panel = document.getElementById(`confirm-${round}`);
+            const amountEl = document.getElementById(`confirm-${round}-amount`);
+            amountEl.textContent = `${amount} €`;
+            // hide stake grid, show confirm
+            panel.closest(`[id^="round-"]`).querySelector(".stake-grid").classList.add("hidden");
+            panel.classList.remove("hidden");
+        }
+
+        function hideConfirm(round) {
+            const panel = document.getElementById(`confirm-${round}`);
+            panel.classList.add("hidden");
+            panel.closest(`[id^="round-"]`).querySelector(".stake-grid").classList.remove("hidden");
+            // clear selected
+            panel.closest(`[id^="round-"]`).querySelectorAll(".stake-button").forEach(b => b.classList.remove("selected"));
+            pendingStake = { round: null, amount: 0 };
+        }
+
+        document.querySelectorAll(".stake-button").forEach((button) => {
+            button.addEventListener("click", () => {
+                const amount = Number(button.dataset.stake);
+                const round = Number(button.closest(`[id^="round-"]`).id.replace("round-", "").replace("-controls", ""));
+                // highlight selected
+                button.closest(".stake-grid").querySelectorAll(".stake-button").forEach(b => b.classList.remove("selected"));
+                button.classList.add("selected");
+                showConfirm(round, amount);
+            });
+        });
+
+        document.querySelectorAll(".confirm-btn").forEach((button) => {
+            button.addEventListener("click", () => {
+                if (!pendingStake.round) return;
+                const delta = button.dataset.result === "correct" ? pendingStake.amount : -pendingStake.amount;
+                const label = roundMeta[state.round].title;
+                const round = pendingStake.round;
+                hideConfirm(round);
+                applyDelta(delta, label);
+            });
+        });
+
+        document.querySelectorAll(".cancel-stake-btn").forEach((button) => {
+            button.addEventListener("click", () => {
+                if (pendingStake.round) hideConfirm(pendingStake.round);
+            });
+        });
+
+        document.querySelectorAll("[data-wager-round]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const round = Number(button.dataset.wagerRound);
+                const wager = readWager(round);
+
+                if (!wager) {
+                    return;
+                }
+
+                const delta = button.dataset.result === "correct" ? wager.amount : -wager.amount;
+                const label = roundMeta[state.round].title;
+                applyDelta(delta, label);
+                wager.input.value = "";
+            });
+        });
+
+        undoButton.addEventListener("click", undoLastStep);
+
+        document.getElementById("reset-score").addEventListener("click", () => {
+            state.score = 0;
+            state.round = 1;
+            state.questionIndex = 0;
+            state.history = [];
+            saveState();
+            render();
+        });
+
+        document.getElementById("change-role").addEventListener("click", () => {
+            state.role = null;
+            saveState();
+            render();
+        });
+
+        render();
+    </script>
+</body>
+</html>
